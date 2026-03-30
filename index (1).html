@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget - Finance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+  <div class="flex h-screen">
+
+    <!-- SIDEBAR -->
+    <div class="w-64 bg-white border-r flex flex-col">
+      <div class="px-6 py-8 flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-2xl">💰</div>
+        <h1 class="text-3xl font-semibold text-emerald-600" id="app-name">Budget</h1>
+      </div>
+
+      <div class="px-3">
+        <button onclick="quickAdd()" 
+                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-3xl py-4 flex items-center justify-center gap-2 font-medium text-lg shadow-lg shadow-emerald-200">
+          <span class="text-2xl">+</span> Quick Add
+        </button>
+      </div>
+
+      <nav class="mt-8 flex-1 px-3 space-y-1">
+        <a onclick="showPage('dashboard')" class="flex items-center gap-3 px-6 py-4 rounded-3xl text-emerald-600 bg-emerald-100 font-medium">📊 Dashboard</a>
+        <a onclick="showPage('transactions')" class="flex items-center gap-3 px-6 py-4 rounded-3xl hover:bg-gray-100">↔ Transactions</a>
+        <a onclick="showPage('accounts')" class="flex items-center gap-3 px-6 py-4 rounded-3xl hover:bg-gray-100">💳 Accounts</a>
+        <a onclick="showPage('budgets')" class="flex items-center gap-3 px-6 py-4 rounded-3xl hover:bg-gray-100">📈 Budgets</a>
+        <a onclick="showPage('categories')" class="flex items-center gap-3 px-6 py-4 rounded-3xl hover:bg-gray-100">🏷️ Categories</a>
+      </nav>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 overflow-auto" id="main-content">
+
+      <!-- DASHBOARD -->
+      <div id="dashboard-page">
+        <div class="px-10 py-8">
+          <div class="flex justify-between items-center">
+            <h2 class="text-4xl font-semibold">Dashboard</h2>
+            <p class="text-gray-500">Here's your financial overview</p>
+          </div>
+
+          <div class="grid grid-cols-4 gap-6 mt-8">
+            <div class="bg-white rounded-3xl p-6 shadow-sm">
+              <div class="flex justify-between">
+                <div><p class="text-gray-500 text-sm">Total Balance</p><p class="text-4xl font-semibold mt-2" id="total-balance">₹43,820</p></div>
+                <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl">💰</div>
+              </div>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm">
+              <div class="flex justify-between">
+                <div><p class="text-gray-500 text-sm">Total Income</p><p class="text-4xl font-semibold mt-2 text-emerald-600" id="total-income">₹6,300</p></div>
+                <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl">↑</div>
+              </div>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm">
+              <div class="flex justify-between">
+                <div><p class="text-gray-500 text-sm">Total Expenses</p><p class="text-4xl font-semibold mt-2 text-red-500" id="total-expense">₹2,013</p></div>
+                <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-3xl">↓</div>
+              </div>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm">
+              <div class="flex justify-between">
+                <div><p class="text-gray-500 text-sm">Net Savings</p><p class="text-4xl font-semibold mt-2 text-blue-600" id="net-savings">₹4,287</p></div>
+                <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl">🐷</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6 mt-10">
+            <div class="bg-white rounded-3xl p-6 shadow-sm">
+              <h3 class="font-semibold mb-4">Cash Flow</h3>
+              <canvas id="cashFlowChart" height="100"></canvas>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-sm">
+              <h3 class="font-semibold mb-4">Spending by Category</h3>
+              <canvas id="spendingChart" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSACTIONS -->
+      <div id="transactions-page" class="hidden px-10 py-8">
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h2 class="text-4xl font-semibold">Transactions</h2>
+            <p class="text-gray-500">Manage your income and expenses</p>
+          </div>
+          <button onclick="showAddTransactionModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-3xl font-medium flex items-center gap-2">
+            <span class="text-xl">+</span> Add Transaction
+          </button>
+        </div>
+
+        <div class="flex gap-2 mb-6">
+          <button onclick="filterTransactions('all')" id="filter-all" class="px-6 py-2 bg-emerald-500 text-white rounded-3xl font-medium">All</button>
+          <button onclick="filterTransactions('income')" id="filter-income" class="px-6 py-2 hover:bg-gray-100 rounded-3xl font-medium">Income</button>
+          <button onclick="filterTransactions('expense')" id="filter-expense" class="px-6 py-2 hover:bg-gray-100 rounded-3xl font-medium">Expense</button>
+        </div>
+
+        <div class="bg-white rounded-3xl overflow-hidden shadow-sm">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b bg-gray-50">
+                <th class="text-left px-8 py-5 font-medium text-gray-500">Date</th>
+                <th class="text-left px-8 py-5 font-medium text-gray-500">Description</th>
+                <th class="text-left px-8 py-5 font-medium text-gray-500">Category</th>
+                <th class="text-left px-8 py-5 font-medium text-gray-500">Account</th>
+                <th class="text-right px-8 py-5 font-medium text-gray-500">Amount</th>
+                <th class="w-20"></th>
+              </tr>
+            </thead>
+            <tbody id="transactions-body" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ACCOUNTS PAGE -->
+      <div id="accounts-page" class="hidden px-10 py-8">
+        <div class="flex justify-between items-center mb-10">
+          <div>
+            <h1 class="text-4xl font-semibold">Accounts</h1>
+            <p class="text-gray-500">Net Worth: ₹46,320</p>
+          </div>
+          <button onclick="addNewAccount()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-3xl font-medium flex items-center gap-2">
+            <span class="text-xl">+</span> Add Account
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="accounts-grid">
+          <!-- Filled by JavaScript -->
+        </div>
+      </div>
+
+      <!-- BUDGETS PAGE -->
+      <div id="budgets-page" class="hidden px-10 py-8">
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h2 class="text-4xl font-semibold">Budgets</h2>
+            <p class="text-gray-500">Keep your spending in check</p>
+          </div>
+          <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-3xl font-medium">+ Create Budget</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="budgets-grid">
+          <!-- Filled by JavaScript -->
+        </div>
+      </div>
+
+      <!-- CATEGORIES PAGE -->
+      <div id="categories-page" class="hidden px-10 py-8">
+        <div class="flex justify-between items-center mb-8">
+          <div>
+            <h2 class="text-4xl font-semibold">Categories</h2>
+            <p class="text-gray-500">Organize your transactions</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-6" id="categories-grid">
+          <!-- Filled by JavaScript -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Transaction Modal -->
+  <div id="add-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-3xl w-full max-w-md mx-4 p-8">
+      <h3 class="text-2xl font-semibold mb-6">Add New Transaction</h3>
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm text-gray-500 mb-1">Type</label>
+          <div class="flex gap-3">
+            <button onclick="selectType('income')" id="type-income" class="flex-1 py-3 rounded-2xl bg-emerald-100 text-emerald-700 font-medium">Income</button>
+            <button onclick="selectType('expense')" id="type-expense" class="flex-1 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 font-medium">Expense</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-500 mb-1">Amount (₹)</label>
+          <input id="amount" type="number" placeholder="0.00" class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-500 mb-1">Description</label>
+          <input id="description" type="text" placeholder="Salary / Grocery" class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:outline-none focus:border-emerald-500">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-gray-500 mb-1">Date</label>
+            <input id="date" type="date" class="w-full px-5 py-4 border border-gray-300 rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-500 mb-1">Category</label>
+            <select id="category" class="w-full px-5 py-4 border border-gray-300 rounded-2xl">
+              <option value="Salary">Salary</option>
+              <option value="Business">Business</option>
+              <option value="Food">Food & Dining</option>
+              <option value="Transport">Transportation</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-500 mb-1">Account</label>
+          <select id="account" class="w-full px-5 py-4 border border-gray-300 rounded-2xl">
+            <option value="Checking Account">Checking Account</option>
+            <option value="Savings Account">Savings Account</option>
+            <option value="Cash Wallet">Cash Wallet</option>
+            <option value="Credit Card">Credit Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-4 mt-8">
+        <button onclick="hideModal()" class="flex-1 py-4 border border-gray-300 rounded-3xl font-medium">Cancel</button>
+        <button onclick="addTransaction()" class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-3xl font-medium">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== ALL JAVASCRIPT ====================
+    let transactions = [];
+    let accounts = [];
+    let budgets = [];
+
+    function showPage(page) {
+      document.querySelectorAll('#main-content > div').forEach(div => div.classList.add('hidden'));
+      document.getElementById(page + '-page').classList.remove('hidden');
+    }
+
+    function quickAdd() {
+      showPage('transactions');
+      showAddTransactionModal();
+    }
+
+    // Transaction Modal
+    function showAddTransactionModal() {
+      document.getElementById('add-modal').classList.remove('hidden');
+      selectType('income');
+    }
+    function hideModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+    }
+    function selectType(type) {
+      window.currentType = type;
+      const inc = document.getElementById('type-income');
+      const exp = document.getElementById('type-expense');
+      if (type === 'income') {
+        inc.classList.add('bg-emerald-100', 'text-emerald-700');
+        exp.classList.remove('bg-emerald-100', 'text-emerald-700');
+      } else {
+        exp.classList.add('bg-emerald-100', 'text-emerald-700');
+        inc.classList.remove('bg-emerald-100', 'text-emerald-700');
+      }
+    }
+
+    function addTransaction() {
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!amount) return alert("Enter amount");
+
+      const newTrans = {
+        id: Date.now(),
+        date: document.getElementById('date').value || new Date().toISOString().split('T')[0],
+        description: document.getElementById('description').value || "Untitled",
+        category: document.getElementById('category').value,
+        account: document.getElementById('account').value,
+        amount: amount,
+        type: window.currentType || 'income'
+      };
+
+      transactions.unshift(newTrans);
+      renderTransactions();
+      hideModal();
+      document.getElementById('amount').value = '';
+      document.getElementById('description').value = '';
+    }
+
+    function renderTransactions(filtered = null) {
+      const tbody = document.getElementById('transactions-body');
+      tbody.innerHTML = '';
+      const data = filtered || transactions;
+      data.forEach(t => {
+        const row = document.createElement('tr');
+        row.className = "hover:bg-gray-50";
+        row.innerHTML = `
+          <td class="px-8 py-5">${t.date}</td>
+          <td class="px-8 py-5 font-medium">${t.description}</td>
+          <td class="px-8 py-5"><span class="px-4 py-1 text-xs rounded-full bg-gray-100">${t.category}</span></td>
+          <td class="px-8 py-5 text-gray-600">${t.account}</td>
+          <td class="px-8 py-5 text-right font-semibold ${t.type==='income'?'text-emerald-600':'text-red-500'}">
+            ${t.type==='income'?'+' : '-'}₹${t.amount.toLocaleString('en-IN')}
+          </td>
+          <td class="px-8 py-5"><button onclick="deleteTransaction(${t.id})" class="text-red-400 hover:text-red-600">🗑</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function deleteTransaction(id) {
+      if (confirm("Delete?")) {
+        transactions = transactions.filter(t => t.id !== id);
+        renderTransactions();
+      }
+    }
+
+    function filterTransactions(type) {
+      document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('bg-emerald-500','text-white'));
+      if (type === 'all') {
+        document.getElementById('filter-all').classList.add('bg-emerald-500','text-white');
+        renderTransactions();
+      } else {
+        document.getElementById('filter-'+type).classList.add('bg-emerald-500','text-white');
+        const filtered = transactions.filter(t => t.type === type);
+        renderTransactions(filtered);
+      }
+    }
+
+    // Accounts
+    function renderAccounts() {
+      const grid = document.getElementById('accounts-grid');
+      grid.innerHTML = '';
+      accounts.forEach(acc => {
+        const neg = acc.balance < 0;
+        grid.innerHTML += `
+          <div class="bg-white rounded-3xl p-6 shadow-sm">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-${acc.color}-100 text-${acc.color}-600 rounded-2xl flex items-center justify-center text-3xl">
+                ${acc.icon}
+              </div>
+              <div>
+                <h3 class="font-semibold">${acc.name}</h3>
+                <p class="text-sm text-gray-500">${acc.type}</p>
+              </div>
+            </div>
+            <div class="mt-8">
+              <p class="text-xs text-gray-500">Current Balance</p>
+              <p class="text-4xl font-semibold mt-1 ${neg ? 'text-red-500' : 'text-emerald-600'}">
+                ${neg ? '-' : ''}₹${Math.abs(acc.balance).toLocaleString('en-IN')}
+              </p>
+            </div>
+          </div>`;
+      });
+    }
+
+    function addNewAccount() {
+      const name = prompt("Account Name?");
+      if (!name) return;
+      const type = prompt("Type (Cash/Checking/Savings/Credit/Investment)?", "Savings");
+      const bal = parseFloat(prompt("Balance?", "5000")) || 0;
+
+      accounts.push({
+        name: name,
+        type: type,
+        balance: bal,
+        color: "emerald",
+        icon: type.includes("Credit") ? "💳" : type.includes("Cash") ? "💵" : "🏦"
+      });
+      renderAccounts();
+    }
+
+    // Budgets
+    function renderBudgets() {
+      const grid = document.getElementById('budgets-grid');
+      grid.innerHTML = `
+        <div class="bg-white rounded-3xl p-6">
+          <div class="flex justify-between"><span class="font-medium">Food & Dining</span><span class="text-emerald-600">Edit</span></div>
+          <p class="text-3xl font-semibold mt-4">₹187.50 <span class="text-gray-400">/ ₹600</span></p>
+          <div class="h-2 bg-gray-200 rounded-full mt-6"><div class="h-2 bg-emerald-500 rounded-full w-1/3"></div></div>
+          <p class="text-xs text-gray-500 mt-2">31% used • ₹412.50 remaining</p>
+        </div>
+        <!-- More budgets can be added similarly -->
+      `;
+    }
+
+    // Categories
+    function renderCategories() {
+      const grid = document.getElementById('categories-grid');
+      grid.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 text-center">
+          <div class="w-16 h-16 mx-auto bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-4xl mb-4">📚</div>
+          <h3 class="font-semibold">Education</h3>
+          <p class="text-sm text-gray-500">Expense</p>
+        </div>
+        <div class="bg-white rounded-3xl p-6 text-center">
+          <div class="w-16 h-16 mx-auto bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-4xl mb-4">💼</div>
+          <h3 class="font-semibold">Freelance</h3>
+          <p class="text-sm text-gray-500">Income</p>
+        </div>
+        <!-- Add more as needed -->
+      `;
+    }
+
+    // Sample Data
+    function loadSampleData() {
+      transactions = [
+        { id: 1, date: "2026-03-26", description: "Online Course", category: "Education", account: "Checking Account", amount: 2999, type: "expense" },
+        { id: 3, date: "2026-03-18", description: "Freelance Project", category: "Freelance", account: "Savings Account", amount: 12500, type: "income" }
+      ];
+
+      accounts = [
+        { name: "Cash Wallet", type: "Cash", balance: 320, color: "emerald", icon: "💵" },
+        { name: "Checking Account", type: "Checking", balance: 3450, color: "blue", icon: "🏦" },
+        { name: "Credit Card", type: "Credit", balance: -1250, color: "red", icon: "💳" },
+        { name: "Savings Account", type: "Savings", balance: 12800, color: "emerald", icon: "🐷" }
+      ];
+    }
+
+    // Charts
+    function createCharts() {
+      new Chart(document.getElementById('cashFlowChart'), { type: 'bar', data: { labels: ['Oct','Nov','Dec','Jan','Feb','Mar'], datasets: [{label:'Income',data:[16200,16300,16400,16300,16400,16300],backgroundColor:'#10b981'},{label:'Expense',data:[2100,2000,2100,2000,2100,2000],backgroundColor:'#ef4444'}] }, options:{responsive:true, plugins:{legend:{display:false}}} });
+      new Chart(document.getElementById('spendingChart'), { type: 'doughnut', data: { labels:['Food','Housing','Transport','Shopping','Entertainment','Others'], datasets:[{data:[187,1400,110,51,50,215],backgroundColor:['#10b981','#eab308','#3b82f6','#ec4899','#8b5cf6','#f59e0b']}] }, options:{responsive:true, cutout:'70%', plugins:{legend:{position:'bottom'}}} });
+    }
+
+    // Initialize
+    window.onload = () => {
+      createCharts();
+      loadSampleData();
+      renderTransactions();
+      renderAccounts();
+      renderBudgets();
+      renderCategories();
+    };
+  </script>
+</body>
+</html>
